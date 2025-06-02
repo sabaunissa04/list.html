@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Hospital Task Alarm System</title>
+  <style>
+    body { font-family: Arial; background: #f0f4f8; padding: 20px; }
+    h2, h3 { color: #333; }
+    .task { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; border-radius: 8px; }
+    .critical { background-color: #ffcccc; }
+    .moderate { background-color: #fff3cd; }
+    .completed { background-color: #d4edda; text-decoration: line-through; }
+    input, select, button { margin: 5px 0; padding: 6px; width: 100%; }
+    #formSection { margin-bottom: 20px; }
+  </style>
+</head>
+<body>
+
+<h2>Hospital Task Alarm System</h2>
+
+<div id="formSection">
+  <h3>Add New Task</h3>
+  <input type="text" id="taskName" placeholder="Task name (e.g., Check BP - Bed 5)" />
+  <input type="time" id="taskTime" />
+  <select id="taskLevel">
+    <option value="critical">Critical</option>
+    <option value="moderate">Moderate</option>
+  </select>
+  <button onclick="addTask()">Add Task</button>
+</div>
+
+<div id="tasks"></div>
+
+<audio id="alarmSound" src="alarm.mp3"></audio>
+
+<script>
+  const tasks = [];
+
+  function renderTasks() {
+    const container = document.getElementById('tasks');
+    container.innerHTML = '';
+    const now = new Date();
+
+    tasks.forEach((task, i) => {
+      const taskDiv = document.createElement('div');
+      taskDiv.className = task ${task.level} ${task.completed ? 'completed' : ''};
+
+      const taskTime = new Date();
+      const [h, m] = task.time.split(':');
+      taskTime.setHours(h);
+      taskTime.setMinutes(m);
+      taskTime.setSeconds(0);
+      const minutesLeft = Math.floor((taskTime - now) / 60000);
+
+      taskDiv.innerHTML = `
+        <strong>${task.name}</strong><br>
+        Time: ${task.time} (${minutesLeft} min left)<br>
+        Status: ${task.completed ? 'Done' : 'Pending'}<br>
+        <button onclick="markDone(${i})">Mark as Completed</button>
+      `;
+
+      container.appendChild(taskDiv);
+
+      // Alarm when time hits
+      if (minutesLeft === 0 && !task.completed && !task.alerted) {
+        task.alerted = true;
+        document.getElementById("alarmSound").play();
+        alert(ALERT: ${task.name} is due now!);
+        speakText(Reminder: ${task.name} is due now.);
+      }
+    });
+  }
+
+  function addTask() {
+    const name = document.getElementById('taskName').value;
+    const time = document.getElementById('taskTime').value;
+    const level = document.getElementById('taskLevel').value;
+
+    if (name && time) {
+      tasks.push({ name, time, level, completed: false, alerted: false });
+      renderTasks();
+      document.getElementById('taskName').value = '';
+      document.getElementById('taskTime').value = '';
+    } else {
+      alert("Please enter both task name and time.");
+    }
+  }
+
+  function markDone(index) {
+    tasks[index].completed = true;
+    renderTasks();
+  }
+
+  function speakText(text) {
+    const msg = new SpeechSynthesisUtterance();
+    msg.text = text;
+    msg.lang = "en-US";
+    window.speechSynthesis.speak(msg);
+  }
+
+  renderTasks();
+  setInterval(renderTasks, 60000); // Update every minute
+</script>
+
+</body>
+</html>
